@@ -4,22 +4,37 @@ import time
 import random
 BACKGROUND_COLOR = "#B1DDC6"
 
-data = pandas.read_csv("data\\french_words.csv")
-data_dict =data.to_dict(orient='records')
+try:
+    data_dict = pandas.read_csv("data\\remaining_words.csv").to_dict(orient='records')
+except FileNotFoundError:
+    data_dict = pandas.read_csv("data\\french_words.csv").to_dict(orient='records')
 random_word = random.choice(data_dict)
-def to_eng():
+try:
+    learned_words = list(pandas.read_csv("data\\learned_words.csv").to_dict(orient='records'))
+except FileNotFoundError:
+    learned_words = []
+
+def flip_card():
     global random_word
     card.itemconfig(title, text='English',fill='white')
     card.itemconfig(word, text=random_word["English"],fill='white')
     card.itemconfig(card_img, image=card_back)
-    random_word = random.choice(data_dict)
-def right():    
+    
+def next_card():    
+    global random_word
     card.itemconfig(card_img, image=card_front)
     card.itemconfig(title, text='French',fill='black')
     card.itemconfig(word, text=random_word["French"],fill='black')
-    card.after(3000,to_eng)
+    card.after(3000,flip_card)
     
-    
+def right():
+    global random_word
+    learned_words.append(random_word)
+    pandas.DataFrame(learned_words).to_csv("data\\learned_words.csv",index=False)
+    data_dict.remove(random_word)
+    pandas.DataFrame(data_dict).to_csv("data\\remaining_words.csv",index=False)
+    random_word = random.choice(data_dict)
+    next_card()
 
 window = Tk()
 window.title('Flashy')
@@ -40,7 +55,7 @@ wrong.grid(row=1,column=0)
 right_button = Button(window,image=right_img,relief='flat',borderwidth=0,highlightthickness=0,command=right)
 right_button.grid(row=1,column=2)
 
-right()
+next_card()
 
 
 window.mainloop()
